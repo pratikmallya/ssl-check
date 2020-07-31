@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/jedib0t/go-pretty/table"
 	"github.com/urfave/cli"
 	"github.com/wpalmer/gozone"
 )
@@ -31,6 +32,11 @@ func getExpirationFromZoneFile(filename string) {
 	stream, _ := os.Open(filename)
 	var record gozone.Record
 	scanner := gozone.NewScanner(stream)
+	tw := table.NewWriter()
+	tw.SetAutoIndex(true)
+	tw.SetStyle(table.StyleLight)
+
+	tw.AppendHeader(table.Row{"Domain", "Expiration"})
 
 	for {
 		err := scanner.Next(&record)
@@ -45,11 +51,12 @@ func getExpirationFromZoneFile(filename string) {
 		cfg := tls.Config{}
 		conn, err := tls.Dial("tcp", fmt.Sprintf("%s:443", record.DomainName), &cfg)
 		if err != nil {
-			fmt.Printf("%s. Error: %s \n", record.DomainName, err)
+			tw.AppendRow(table.Row{record.DomainName, err})
 			continue
 		}
 		certChain := conn.ConnectionState().PeerCertificates
 		cert := certChain[len(certChain)-1]
-		fmt.Printf("%s: %s\n", record.DomainName, cert.NotAfter)
+		tw.AppendRow(table.Row{record.DomainName, cert.NotAfter})
 	}
+	fmt.Println(tw.Render())
 }
