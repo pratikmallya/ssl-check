@@ -48,6 +48,11 @@ func getExpirationFromZoneFile(filename string) {
 			break
 		}
 
+		if !(record.Type == gozone.RecordType_A ||
+			record.Type == gozone.RecordType_CNAME) {
+			continue
+		}
+
 		cfg := tls.Config{}
 		conn, err := tls.Dial("tcp", fmt.Sprintf("%s:443", record.DomainName), &cfg)
 		if err != nil {
